@@ -351,6 +351,14 @@ public class CannonView extends SurfaceView
             target.draw(canvas);
     }
 
+    // checks if the blocker just hit the top or bottom edge of the screen
+    // and handles the collision
+    public void testBlockerVertical() {
+        if (blocker.verticalBump()) {
+            blocker.playSound(); // play Blocker redirect sound
+        }
+    }
+
     // checks if the ball collides with the Blocker or any of the Targets
     // and handles the collisions
     public void testForCollisions() {
@@ -485,6 +493,7 @@ public class CannonView extends SurfaceView
                         totalElapsedTime += elapsedTimeMS / 1000.0;
                         updatePositions(elapsedTimeMS); // update game state
                         testForCollisions(); // test for GameElement collisions
+                        testBlockerVertical(); // test for Blocker vertical collision
                         drawGameElements(canvas); // draw using the canvas
                         previousFrameTime = currentTime; // update previous time
                     }
