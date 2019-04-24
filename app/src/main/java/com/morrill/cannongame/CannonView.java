@@ -36,6 +36,9 @@ public class CannonView extends SurfaceView
     public static final int MISS_PENALTY = 2; // seconds deducted on a miss
     public static final int HIT_REWARD = 3; // seconds added on a hit
     public static final int MAX_LEVEL = 9; // highest level possible in a game
+    public static final int MIN_LEVEL = 1; // lowest level possible in a game
+    public static final int SCORE_FACTOR = 10; // factor used to determine score amount
+    public static final int COLLISION_FACTOR = 15; // factor used to determine score deduction
 
     // constants for the Cannon
     public static final double CANNON_BASE_RADIUS_PERCENT = 3.0 / 40;
@@ -51,15 +54,14 @@ public class CannonView extends SurfaceView
     public static final double TARGET_LENGTH_PERCENT = 3.0 / 20;
     public static final double TARGET_FIRST_X_PERCENT = 3.0 / 5;
     public static final double TARGET_SPACING_PERCENT = 1.0 / 60;
-    //public static final double TARGET_PIECES = 9;
     public static final double TARGET_MIN_SPEED_PERCENT = 3.0 / 4;
-    public static final double TARGET_MAX_SPEED_PERCENT = 6.0 / 40;
+    public static final double TARGET_MAX_SPEED_PERCENT = 6.0 / 4;
 
     // constants for the Blocker
     public static final double BLOCKER_WIDTH_PERCENT = 1.0 / 40;
     public static final double BLOCKER_LENGTH_PERCENT = 1.0 / 4;
     public static final double BLOCKER_X_PERCENT = 1.0 / 2;
-    public static final double BLOCKER_SPEED_PERCENT = 1.0 / 10;
+    public static final double BLOCKER_SPEED_PERCENT = 1.0;
 
     // text size 1/18 of screen width
     public static final double TEXT_SIZE_PERCENT = 1.0 / 18;
@@ -83,7 +85,8 @@ public class CannonView extends SurfaceView
     private int shotsFired; // shots the user has fired
     private double totalElapsedTime; // elapsed seconds
     private int gameLevel; // current level in this game
-    private int TARGET_PIECES;
+    private int targetPieces; // number of target pieces on screen at a time
+    private int totalScore; // score accumulated by the user
 
     // constants and variables for managing sounds
     public static final int TARGET_SOUND_ID = 0;
@@ -175,9 +178,9 @@ public class CannonView extends SurfaceView
         int targetY = (int) ((0.5 - TARGET_LENGTH_PERCENT / 2) *
             screenHeight);
 
-        TARGET_PIECES = level;
-        // add TARGET_PIECES Targets to the Target list
-        for (int n = 0; n < TARGET_PIECES; n++) {
+        targetPieces = level;
+        // add targetPieces Targets to the Target list
+        for (int n = 0; n < targetPieces; n++) {
 
             // determine a random velocity between min and max values
             // for Target n
@@ -214,11 +217,14 @@ public class CannonView extends SurfaceView
                 (int) (BLOCKER_LENGTH_PERCENT * screenHeight),
                 (float) (BLOCKER_SPEED_PERCENT * screenHeight));
 
-        timeLeft = 10; // start the countdown at 10 seconds
-        gameLevel = level; // start the game level at 1 out of 9
+        timeLeft = 10; // start the countdown at 10 seconds at the start of each level
+        gameLevel = level; // set the game level (1 to 9)
 
-        shotsFired = 0; // set the initial number of shots fired
-        totalElapsedTime = 0.0; // set the time elapsed to zero
+        if (gameLevel == MIN_LEVEL) {
+            totalScore = 0; // initialize score for a fresh new game
+            shotsFired = 0; // set the initial number of shots fired
+            totalElapsedTime = 0.0; // set the time elapsed to zero
+        }
 
         if (gameOver) { // start a new game after the last game ended
             gameOver = false; // the game is not over
@@ -315,7 +321,7 @@ public class CannonView extends SurfaceView
                             public void onClick(DialogInterface dialog,
                                 int which) {
                                 dialogIsDisplayed = false;
-                                newGame(1); // set up and start a new game
+                                newGame(MIN_LEVEL); // set up and start a new game
                             }
                         }
                     );
@@ -343,9 +349,15 @@ public class CannonView extends SurfaceView
         canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(),
             backgroundPaint);
 
-        //display time remaining
+        // display time remaining
         canvas.drawText(getResources().getString(
             R.string.time_remaining_format, timeLeft), 50, 100, textPaint);
+        // display game level
+        canvas.drawText(getResources().getString(
+                R.string.current_level_format, gameLevel), 50, 200, textPaint);
+        // display Score
+        canvas.drawText(getResources().getString(
+                R.string.highest_score_format, totalScore), 350, 200, textPaint);
 
         cannon.draw(canvas); // draw the cannon
 
@@ -382,6 +394,8 @@ public class CannonView extends SurfaceView
 
                     // add hit rewards time to remaining time
                     timeLeft += targets.get(n).getHitReward();
+                    // increase score by 10 times the current level
+                    totalScore += gameLevel * SCORE_FACTOR;
 
                     cannon.removeCannonball(); // remove Cannonball from game
                     targets.remove(n); // remove the Target that was hit
@@ -404,6 +418,8 @@ public class CannonView extends SurfaceView
 
             // deduct blocker's miss penalty from remaining time
             timeLeft -= blocker.getMissPenalty();
+            // decrease score by 15 times the current level
+            totalScore -= gameLevel * COLLISION_FACTOR;
         }
     }
 
@@ -428,7 +444,7 @@ public class CannonView extends SurfaceView
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         if (!dialogIsDisplayed) {
-            newGame(1); // set up and start a new game
+            newGame(MIN_LEVEL); // set up and start a new game
             cannonThread = new CannonThread(holder); // create thread
             cannonThread.setRunning(true); // start game running
             cannonThread.start(); // start the game loop thread
