@@ -386,7 +386,7 @@ public class CannonView extends SurfaceView
     // checks if the ball collides with the Blocker or any of the Targets
     // and handles the collisions
     public void testForCollisions() {
-        // remove any of the targets taht the Cannonball
+        // remove any of the targets that the Cannonball
         // collides with
         if (cannon.getCannonball() != null &&
             cannon.getCannonball().isOnScreen()) {
