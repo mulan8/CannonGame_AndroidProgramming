@@ -87,6 +87,7 @@ public class CannonView extends SurfaceView
     private int gameLevel; // current level in this game
     private int targetPieces; // number of target pieces on screen at a time
     private int totalScore; // score accumulated by the user
+    private int highestScore; // highest score of all the levels to display
 
     // constants and variables for managing sounds
     public static final int TARGET_SOUND_ID = 0;
@@ -222,6 +223,7 @@ public class CannonView extends SurfaceView
 
         if (gameLevel == MIN_LEVEL) {
             totalScore = 0; // initialize score for a fresh new game
+            highestScore = 0; // initialize high score upon new game
             shotsFired = 0; // set the initial number of shots fired
             totalElapsedTime = 0.0; // set the time elapsed to zero
         }
@@ -357,7 +359,7 @@ public class CannonView extends SurfaceView
                 R.string.current_level_format, gameLevel), 50, 200, textPaint);
         // display Score
         canvas.drawText(getResources().getString(
-                R.string.highest_score_format, totalScore), 350, 200, textPaint);
+                R.string.highest_score_format, highestScore), 350, 200, textPaint);
 
         cannon.draw(canvas); // draw the cannon
 
@@ -397,6 +399,11 @@ public class CannonView extends SurfaceView
                     // increase score by 10 times the current level
                     totalScore += gameLevel * SCORE_FACTOR;
 
+                    // update high score value if total score exceeds it
+                    if (totalScore > highestScore) {
+                        highestScore = totalScore;
+                    }
+
                     cannon.removeCannonball(); // remove Cannonball from game
                     targets.remove(n); // remove the Target that was hit
                     --n; // ensures that we don't skip testing new target n
@@ -420,6 +427,11 @@ public class CannonView extends SurfaceView
             timeLeft -= blocker.getMissPenalty();
             // decrease score by 15 times the current level
             totalScore -= gameLevel * COLLISION_FACTOR;
+
+            // don't allow for negative points
+            if (totalScore < 0) {
+                totalScore = 0; // reset total score if it drops below zero
+            }
         }
     }
 
